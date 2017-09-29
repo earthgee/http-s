@@ -17,14 +17,24 @@ import com.earthgee.downloadokhttp.download.FileDownloader;
 
 public class DownloadPictureActivity extends AppCompatActivity {
 
+    public static int time=1;
+
+    //http://www.sinaimg.cn/dy/slidenews/1_img/2017_38/63957_1415585_513017.jpg
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_download_pic);
 
         final ImageView imageView= (ImageView) findViewById(R.id.img);
+
+        String url="";
+
+            url="http://www.sinaimg.cn/dy/slidenews/1_img/2017_38/63957_1415585_513017.jpg";
+
+
+        time++;
         FileDownloader.getInstance().download(
-                "http://www.sinaimg.cn/dy/slidenews/1_img/2017_38/63957_1415585_513017.jpg",
+                url,
                 new DownloadCallback() {
             @Override
             public void onDownloadSuccess(String filePath) {
