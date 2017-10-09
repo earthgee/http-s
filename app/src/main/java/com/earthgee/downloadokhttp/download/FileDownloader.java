@@ -1,5 +1,6 @@
 package com.earthgee.downloadokhttp.download;
 
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
@@ -48,6 +49,7 @@ public class FileDownloader{
     private OkHttpClient client;
 
     private Handler handler;
+    private FileCache cache;
 
     private final int DOWNLOAD_SUCCESS=1;
     private final int DOWNLOAD_FAIL=0;
@@ -71,6 +73,10 @@ public class FileDownloader{
                 }
             }
         };
+
+        File externalStorageFile = Environment.getExternalStorageDirectory();
+        File saveFileDir = new File(externalStorageFile, "earthgee_file_save");
+        cache=new FileCache(saveFileDir,50*1024*1024);
     }
 
     /**
@@ -78,6 +84,16 @@ public class FileDownloader{
      */
     public void download(final String url, final DownloadCallback downloadCallback){
         Request request=constructDownloadRequest(url);
+        String filePath=cache.get(request);
+        if(!"".equals(filePath)){
+            Log.d(TAG,"url:"+url+", get cache success\n");
+            Message message=new Message();
+            message.what=DOWNLOAD_SUCCESS;
+            message.obj=new Object[]{downloadCallback,filePath};
+            handler.sendMessage(message);
+            return;
+        }
+
         //callback执行线程非ui线程
         client.newCall(request).enqueue(new Callback() {
             @Override
@@ -93,8 +109,7 @@ public class FileDownloader{
             public void onResponse(Call call, Response response) throws IOException {
                 if(response.isSuccessful()){
                     String filePath="";
-                    FileSaver fileSaver=new FileSaver();
-                    filePath=fileSaver.saveFile(response,url);
+                    filePath=cache.put(response);
 
                     if("".equals(filePath)){
                         Log.d(TAG,"url:"+url+", download fail,save fail\n");
@@ -129,6 +144,7 @@ public class FileDownloader{
     private Request constructDownloadRequest(String url){
         HttpUrl httpUrl=HttpUrl.parse(url);
         Request request=new Request.Builder().url(httpUrl).build();
+
         return request;
     }
 
