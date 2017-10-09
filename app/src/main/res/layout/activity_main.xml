@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
     tools:context="com.earthgee.downloadokhttp.MainActivity">
 
     <Button
@@ -12,5 +13,23 @@
         android:layout_height="wrap_content"
         android:text="下载一张图片"
         />
+
+    <Button
+        android:id="@+id/upload_pic"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="上传一张图片"
+        android:layout_marginTop="8dp"
+        app:layout_constraintTop_toBottomOf="@+id/download_pic"
+        />
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="上传一张图片(带参数)"
+        tools:layout_editor_absoluteX="0dp"
+        app:layout_constraintTop_toBottomOf="@+id/upload_pic"
+        android:layout_marginTop="8dp"
+        android:id="@+id/upload_pic_with_params" />
 
 </android.support.constraint.ConstraintLayout>
