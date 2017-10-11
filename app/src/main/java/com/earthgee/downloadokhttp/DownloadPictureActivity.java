@@ -5,6 +5,7 @@ import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.widget.ImageView;
 import android.widget.Toast;
 
@@ -33,7 +34,7 @@ public class DownloadPictureActivity extends AppCompatActivity {
 
 
         time++;
-        FileDownloader.getInstance().download(
+        FileDownloader.getInstance().downloadNeedProgress(
                 url,
                 new DownloadCallback() {
             @Override
@@ -44,7 +45,12 @@ public class DownloadPictureActivity extends AppCompatActivity {
                 imageView.setImageBitmap(img);
             }
 
-            @Override
+                    @Override
+                    public void onUpdate(long bytesRead, long contentLength, boolean done) {
+                        Log.d("earthgee","已下载字节数:"+bytesRead+",总长度:"+contentLength);
+                    }
+
+                    @Override
             public void onDownloadFail() {
                 Toast.makeText(DownloadPictureActivity.this,
                         "下载失败，请重试",Toast.LENGTH_SHORT).show();

@@ -1,4 +1,4 @@
-package com.earthgee.downloadokhttp.download;
+package com.earthgee.downloadokhttp.download.internal;
 
 import android.os.Environment;
 
@@ -62,6 +62,7 @@ public class FileCache {
                 return "";
             }
 
+            snapshot.close();
             return fileSaveDirectory.getAbsolutePath()+"/"+
                     key(request.url())+"."+ENTRY;
         }

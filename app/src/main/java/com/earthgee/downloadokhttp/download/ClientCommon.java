@@ -3,6 +3,8 @@ package com.earthgee.downloadokhttp.download;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
+import com.earthgee.downloadokhttp.download.internal.RetryInterceptor;
+
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;

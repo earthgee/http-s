@@ -4,28 +4,19 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
-import android.support.annotation.Nullable;
 import android.util.Log;
+
+import com.earthgee.downloadokhttp.download.internal.DownloadProgressInterceptor;
+import com.earthgee.downloadokhttp.download.internal.FileCache;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.Proxy;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import okhttp3.Call;
 import okhttp3.Callback;
-import okhttp3.Connection;
-import okhttp3.EventListener;
-import okhttp3.Handshake;
 import okhttp3.HttpUrl;
-import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
-import okhttp3.Protocol;
 import okhttp3.Request;
-import okhttp3.RequestBody;
 import okhttp3.Response;
 
 /**
@@ -146,6 +137,61 @@ public class FileDownloader{
         Request request=new Request.Builder().url(httpUrl).build();
 
         return request;
+    }
+
+    public void downloadNeedProgress(final String url, final DownloadCallback downloadCallback){
+        Request request=constructDownloadRequest(url);
+        String filePath=cache.get(request);
+        if(!"".equals(filePath)){
+            Log.d(TAG,"url:"+url+", get cache success\n");
+            downloadCallback.onUpdate(1,1,true);
+            Message message=new Message();
+            message.what=DOWNLOAD_SUCCESS;
+            message.obj=new Object[]{downloadCallback,filePath};
+            handler.sendMessage(message);
+            return;
+        }
+
+        //callback执行线程非ui线程
+        client.newBuilder().addInterceptor(new DownloadProgressInterceptor(downloadCallback)).
+                build().newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                Log.d(TAG,"url:"+url+", download fail:"+e.getMessage());
+                Message message=new Message();
+                message.what=DOWNLOAD_FAIL;
+                message.obj= downloadCallback;
+                handler.sendMessage(message);
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if(response.isSuccessful()){
+                    String filePath="";
+                    filePath=cache.put(response);
+
+                    if("".equals(filePath)){
+                        Log.d(TAG,"url:"+url+", download fail,save fail\n");
+                        Message message=new Message();
+                        message.what=DOWNLOAD_FAIL;
+                        message.obj= downloadCallback;
+                        handler.sendMessage(message);
+                    }else{
+                        Log.d(TAG,"url:"+url+", download success\n");
+                        Message message=new Message();
+                        message.what=DOWNLOAD_SUCCESS;
+                        message.obj=new Object[]{downloadCallback,filePath};
+                        handler.sendMessage(message);
+                    }
+                }else{
+                    Log.d(TAG,"url:"+url+", download fail,errorcode is:"+response.code());
+                    Message message=new Message();
+                    message.what=DOWNLOAD_FAIL;
+                    message.obj= downloadCallback;
+                    handler.sendMessage(message);
+                }
+            }
+        });
     }
 
 

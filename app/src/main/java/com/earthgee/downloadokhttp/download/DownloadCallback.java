@@ -8,6 +8,9 @@ public interface DownloadCallback {
 
     void onDownloadSuccess(String filePath);
 
+    //此回调不在主线程
+    void onUpdate(long bytesRead,long contentLength,boolean done);
+
     void onDownloadFail();
 
 }

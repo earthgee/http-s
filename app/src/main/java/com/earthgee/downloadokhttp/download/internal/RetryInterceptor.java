@@ -1,4 +1,4 @@
-package com.earthgee.downloadokhttp.download;
+package com.earthgee.downloadokhttp.download.internal;
 
 import java.io.IOException;
 
