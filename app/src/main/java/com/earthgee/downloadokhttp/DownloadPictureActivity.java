@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.Toast;
 
@@ -20,6 +21,8 @@ public class DownloadPictureActivity extends AppCompatActivity {
 
     public static int time=1;
 
+    private ProgressView progressView;
+
     //http://www.sinaimg.cn/dy/slidenews/1_img/2017_38/63957_1415585_513017.jpg
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -27,6 +30,7 @@ public class DownloadPictureActivity extends AppCompatActivity {
         setContentView(R.layout.activity_download_pic);
 
         final ImageView imageView= (ImageView) findViewById(R.id.img);
+        progressView= (ProgressView) findViewById(R.id.progress);
 
         String url="";
 
@@ -34,6 +38,7 @@ public class DownloadPictureActivity extends AppCompatActivity {
 
 
         time++;
+        progressView.setVisibility(View.VISIBLE);
         FileDownloader.getInstance().downloadNeedProgress(
                 url,
                 new DownloadCallback() {
@@ -46,8 +51,17 @@ public class DownloadPictureActivity extends AppCompatActivity {
             }
 
                     @Override
-                    public void onUpdate(long bytesRead, long contentLength, boolean done) {
-                        Log.d("earthgee","已下载字节数:"+bytesRead+",总长度:"+contentLength);
+                    public void onUpdate(final long bytesRead, final long contentLength, final boolean done) {
+                       // Log.d("earthgee","已下载字节数:"+bytesRead+",总长度:"+contentLength);
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                progressView.setProgress((float) bytesRead/(float) contentLength);
+                                if(done){
+                                    progressView.setVisibility(View.GONE);
+                                }
+                            }
+                        });
                     }
 
                     @Override
