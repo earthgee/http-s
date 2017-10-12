@@ -5,6 +5,8 @@ import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 
+import com.earthgee.downloadokhttp.download.internal.ProgressRequestBody;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
@@ -73,7 +75,8 @@ public class FileUploader {
         File file=new File(filePath);
         MediaType mediaType=MediaType.parse("application/octet-stream;");
         RequestBody requestBody=RequestBody.create(mediaType,file);
-        Request request=new Request.Builder().url(url).post(requestBody).build();
+        ProgressRequestBody progressRequestBody=new ProgressRequestBody(requestBody,uploadCallback);
+        Request request=new Request.Builder().url(url).post(progressRequestBody).build();
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
@@ -127,7 +130,8 @@ public class FileUploader {
         builder.addFormDataPart("uploadfile",file.getName(),RequestBody.create(null,file));
 
         MultipartBody body=builder.build();
-        Request request=new Request.Builder().url(url).post(body).build();
+        ProgressRequestBody progressRequestBody=new ProgressRequestBody(body,uploadCallback);
+        Request request=new Request.Builder().url(url).post(progressRequestBody).build();
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {

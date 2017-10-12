@@ -8,6 +8,9 @@ public interface UploadCallback {
 
     void onUploadSuccess();
 
+    //此方法未运行在主线程!!!
+    void onUpdate(long bytesWritten,long contentLength,boolean done);
+
     void onUploadFail();
 
 }

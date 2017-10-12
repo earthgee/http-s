@@ -51,6 +51,7 @@ public class ProgressView extends View{
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
+        Log.d("earthgee","progress:"+progress);
         canvas.drawArc(0,0,200,200,0,360*progress,true,circlePaint);
     }
 
