@@ -207,14 +207,26 @@ public class FileDownloader{
      * @param downloadCallback
      */
     public Call downloadWithPause(final String url, final DownloadCallback downloadCallback){
+        //先从缓存中寻找
+        Request tmpRequest=constructDownloadRequest(url);
+        String filePath=cache.get(tmpRequest);
+        if(!"".equals(filePath)){
+            Log.d(TAG,"url:"+url+", get cache success\n");
+            Message message=new Message();
+            message.what=DOWNLOAD_SUCCESS;
+            message.obj=new Object[]{downloadCallback,filePath};
+            handler.sendMessage(message);
+            return client.newCall(tmpRequest);
+        }
+
         File externalStorageFile = Environment.getExternalStorageDirectory();
         File saveFileDir = new File(externalStorageFile, "earthgee_file_save/downloading");
         if(!saveFileDir.exists()){
             saveFileDir.mkdir();
         }
 
-        HttpUrl httpUrl=HttpUrl.parse(url);
-        String downloadingFileName= Cache.key(httpUrl);
+        final HttpUrl httpUrl=HttpUrl.parse(url);
+        final String downloadingFileName= Cache.key(httpUrl);
         final File downloadingFile=new File(saveFileDir,downloadingFileName);
         Request request=null;
         long bytesRead=0;
@@ -253,6 +265,7 @@ public class FileDownloader{
                         filePath="";
                     }
 
+                    filePath=cache.put(httpUrl,filePath);
                     if("".equals(filePath)){
                         Log.d(TAG,"url:"+url+", download fail,save fail\n");
                         Message message=new Message();
@@ -261,6 +274,8 @@ public class FileDownloader{
                         handler.sendMessage(message);
                     }else{
                         Log.d(TAG,"url:"+url+", download success\n");
+                        //如果成功将文件倒到缓存里
+
                         Message message=new Message();
                         message.what=DOWNLOAD_SUCCESS;
                         message.obj=new Object[]{downloadCallback,filePath};

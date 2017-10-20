@@ -9,6 +9,7 @@ import okhttp3.Cache;
 import okhttp3.HttpUrl;
 import okhttp3.Request;
 import okhttp3.Response;
+import okhttp3.internal.Util;
 import okhttp3.internal.cache.CacheRequest;
 import okhttp3.internal.cache.CacheStrategy;
 import okhttp3.internal.cache.DiskLruCache;
@@ -17,6 +18,7 @@ import okhttp3.internal.io.FileSystem;
 import okio.BufferedSource;
 import okio.ByteString;
 import okio.ForwardingSink;
+import okio.Okio;
 import okio.Sink;
 
 /**
@@ -70,6 +72,7 @@ public class FileCache {
         return filePath;
     }
 
+    //将响应中的数据存入缓存管理中
     public String put(Response response){
         String filePath="";
         if(isExternalStorageWriteable()) {
@@ -99,6 +102,53 @@ public class FileCache {
                         key(response.request().url())+"."+ENTRY;
             }catch (IOException e){
                 filePath="";
+            }
+        }
+
+        return filePath;
+    }
+
+    //将文件中的数据纳入缓存管理
+    public String put(HttpUrl httpUrl,String tmpFilePath){
+        String filePath="";
+        if(null==tmpFilePath||"".equals(tmpFilePath)){
+            return filePath;
+        }
+
+        if(isExternalStorageWriteable()) {
+            if (!fileSaveDirectory.exists()) {
+                fileSaveDirectory.mkdir();
+            }
+            DiskLruCache.Editor editor=null;
+
+            try{
+                editor=cache.edit(key(httpUrl));
+            }catch (IOException e){
+                return "";
+            }
+
+            if(editor==null){
+                return "";
+            }
+
+            Sink cacheOut=editor.newSink(ENTRY);
+
+            BufferedSource source=null;
+            File tmpFile=new File(tmpFilePath);
+            try{
+                source= Okio.buffer(Okio.source(tmpFile));
+                source.readAll(cacheOut);
+                cacheOut.close();
+                editor.commit();
+                filePath=fileSaveDirectory.getAbsolutePath()+"/"+
+                        key(httpUrl)+"."+ENTRY;
+            }catch (IOException e){
+                filePath="";
+            }finally {
+                if(source!=null){
+                    Util.closeQuietly(source);
+                }
+                tmpFile.delete();
             }
         }
 
