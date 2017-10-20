@@ -55,7 +55,6 @@ public class MainActivity extends AppCompatActivity {
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                Log.d("earthgee","update progress");
                                 progressView.setProgress((float)bytesWritten/(float)contentLength);
                                 if(done){
                                     progressView.setVisibility(View.GONE);
@@ -111,6 +110,14 @@ public class MainActivity extends AppCompatActivity {
                                 "上传失败",Toast.LENGTH_SHORT).show();
                     }
                 });
+            }
+        });
+
+        Button btn4= (Button) findViewById(R.id.down_file_with_pause);
+        btn4.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(MainActivity.this,DownloadFileActivity.class));
             }
         });
     }

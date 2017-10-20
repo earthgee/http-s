@@ -10,14 +10,20 @@ import com.earthgee.downloadokhttp.download.internal.DownloadProgressInterceptor
 import com.earthgee.downloadokhttp.download.internal.FileCache;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 
+import okhttp3.Cache;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import okhttp3.internal.Util;
+import okio.BufferedSink;
+import okio.Okio;
+import okio.Sink;
 
 /**
  * Created by earthgee on 17/9/18.
@@ -153,7 +159,7 @@ public class FileDownloader{
         }
 
         //callback执行线程非ui线程
-        client.newBuilder().addInterceptor(new DownloadProgressInterceptor(downloadCallback)).
+        client.newBuilder().addInterceptor(new DownloadProgressInterceptor(0,downloadCallback)).
                 build().newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
@@ -192,6 +198,84 @@ public class FileDownloader{
                 }
             }
         });
+    }
+
+    /**
+     * 支持断点续传的下载
+     *
+     * @param url
+     * @param downloadCallback
+     */
+    public Call downloadWithPause(final String url, final DownloadCallback downloadCallback){
+        File externalStorageFile = Environment.getExternalStorageDirectory();
+        File saveFileDir = new File(externalStorageFile, "earthgee_file_save/downloading");
+        if(!saveFileDir.exists()){
+            saveFileDir.mkdir();
+        }
+
+        HttpUrl httpUrl=HttpUrl.parse(url);
+        String downloadingFileName= Cache.key(httpUrl);
+        final File downloadingFile=new File(saveFileDir,downloadingFileName);
+        Request request=null;
+        long bytesRead=0;
+        if(downloadingFile.exists()&&downloadingFile.length()>0){
+            request=new Request.Builder().url(httpUrl).header("Range","bytes="+downloadingFile.length()+"-").build();
+            bytesRead=downloadingFile.length();
+        }else{
+            request=new Request.Builder().url(httpUrl).build();
+        }
+
+        //callback执行线程非ui线程
+        Call requestCall=client.newBuilder().addInterceptor(new DownloadProgressInterceptor(bytesRead,downloadCallback)).build().
+                newCall(request);
+        requestCall.enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                Log.d(TAG,"url:"+url+", download fail:"+e.getMessage());
+                Message message=new Message();
+                message.what=DOWNLOAD_FAIL;
+                message.obj= downloadCallback;
+                handler.sendMessage(message);
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException{
+                if(response.isSuccessful()){
+                    String filePath="";
+
+                    try {
+                        BufferedSink sink=Okio.buffer(Okio.appendingSink(downloadingFile));
+                        sink.writeAll(response.body().source());
+
+                        Util.closeQuietly(sink);
+                        filePath=downloadingFile.getAbsolutePath();
+                    } catch (IOException e) {
+                        filePath="";
+                    }
+
+                    if("".equals(filePath)){
+                        Log.d(TAG,"url:"+url+", download fail,save fail\n");
+                        Message message=new Message();
+                        message.what=DOWNLOAD_FAIL;
+                        message.obj= downloadCallback;
+                        handler.sendMessage(message);
+                    }else{
+                        Log.d(TAG,"url:"+url+", download success\n");
+                        Message message=new Message();
+                        message.what=DOWNLOAD_SUCCESS;
+                        message.obj=new Object[]{downloadCallback,filePath};
+                        handler.sendMessage(message);
+                    }
+                }else{
+                    Log.d(TAG,"url:"+url+", download fail,errorcode is:"+response.code());
+                    Message message=new Message();
+                    message.what=DOWNLOAD_FAIL;
+                    message.obj= downloadCallback;
+                    handler.sendMessage(message);
+                }
+            }
+        });
+        return requestCall;
     }
 
 

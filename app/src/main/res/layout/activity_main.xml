@@ -38,6 +38,15 @@
             android:layout_marginTop="8dp"
             android:id="@+id/upload_pic_with_params" />
 
+        <Button
+            android:id="@+id/down_file_with_pause"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="下载文件(断点续传)"
+            tools:layout_editor_absoluteX="0dp"
+            android:layout_marginTop="12dp"
+            app:layout_constraintTop_toBottomOf="@+id/upload_pic_with_params" />
+
     </android.support.constraint.ConstraintLayout>
 
     <com.earthgee.downloadokhttp.ProgressView

@@ -24,15 +24,22 @@ import okio.Timeout;
 public class DownloadProgressInterceptor implements Interceptor{
 
     private DownloadCallback progressListener;
+    private long bytesRead;
 
-    public DownloadProgressInterceptor(DownloadCallback progressListener){
+    /**
+     *
+     * @param bytesRead 如果是断点续传此长度为上一次下载的文件长度
+     * @param progressListener
+     */
+    public DownloadProgressInterceptor(long bytesRead,DownloadCallback progressListener){
+        this.bytesRead=bytesRead;
         this.progressListener=progressListener;
     }
 
     @Override
     public Response intercept(Chain chain) throws IOException {
         Response originResponse=chain.proceed(chain.request());
-        return originResponse.newBuilder().body(new ProgressResponseBody(originResponse.body(),progressListener)).build();
+        return originResponse.newBuilder().body(new ProgressResponseBody(bytesRead,originResponse.body(),progressListener)).build();
     }
 
     private static class ProgressResponseBody extends ResponseBody{
@@ -40,8 +47,10 @@ public class DownloadProgressInterceptor implements Interceptor{
         private final ResponseBody responseBody;
         private final DownloadCallback progressListener;
         private BufferedSource bufferedSource;
+        private long bytesRead;
 
-        public ProgressResponseBody(ResponseBody responseBody,DownloadCallback progressListener){
+        public ProgressResponseBody(long bytesRead,ResponseBody responseBody,DownloadCallback progressListener){
+            this.bytesRead=bytesRead;
             this.responseBody=responseBody;
             this.progressListener=progressListener;
         }
@@ -54,7 +63,7 @@ public class DownloadProgressInterceptor implements Interceptor{
 
         @Override
         public long contentLength() {
-            return responseBody.contentLength();
+            return responseBody.contentLength()+bytesRead;
         }
 
         @Override
@@ -68,7 +77,7 @@ public class DownloadProgressInterceptor implements Interceptor{
         private Source source(Source source){
             return new ForwardingSource(source) {
 
-                long totalBytesRead=0l;
+                long totalBytesRead=bytesRead;
 
                 @Override
                 public long read(Buffer sink, long byteCount) throws IOException {
